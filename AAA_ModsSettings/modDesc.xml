@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<modDesc descVersion="22">
+    <author>Freelance Modding Crew</author>
+
+    <version>0.0.1-BETA</version>
+
+    <title>
+        <en>Mods Settings - (a 'mod for mods')</en>
+        <de>Mods Settings - (a 'mod for mods')</de>
+        <ru>Mods Settings - (a 'mod for mods')</ru>
+        <cz>Mods Settings - (a 'mod for mods')</cz>
+        <fr>Mods Settings - (a 'mod for mods')</fr>
+        <it>Mods Settings - (a 'mod for mods')</it>
+        <es>Mods Settings - (a 'mod for mods')</es>
+        <pl>Mods Settings - (a 'mod for mods')</pl>
+    </title>
+    
+    <description>
+        <en>
+<![CDATA[Allows other mods to use a single shared settings-file for their properties.
+
+Decker_MMIV - fs-uk.com, forum.farming-simulator.com, modhoster.com]]>
+        </en>
+    </description>
+
+    <iconFilename>store_ModsSettings.dds</iconFilename>
+
+    <multiplayer supported="true"/>
+
+    <!--l10n filenamePrefix="modDesc_l10n" /--> <!-- Load the corresponding modDesc_l10n_<language>.XML file, or revert to 'en'/'de'. -->
+
+    <extraSourceFiles>
+        <sourceFile filename="ModsSettings.lua" />
+    </extraSourceFiles>
+</modDesc>
