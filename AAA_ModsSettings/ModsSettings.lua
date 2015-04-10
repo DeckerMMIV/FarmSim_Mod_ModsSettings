@@ -104,63 +104,20 @@ modsSettings = {
 --
     ,getStringLocal = function(modName, keyPath, attrName, defaultValue)
         return modsSettings._getLocal("String", modName, keyPath, attrName, defaultValue)
-        --modsSettings:_load()
-        --local xPath = modsSettings._makeXPath(modName, keyPath, attrName)
-        --local value = getXMLString(modsSettings._xmlFile, xPath)
-        --if value ~= nil then
-        --    return value
-        --end
-        --setXMLString(modsSettings._xmlFile, xPath, defaultValue)
-        --modsSettings._xmlFileDirty = true
-        --return defaultValue
     end
     ,getIntLocal = function(modName, keyPath, attrName, defaultValue)
         return modsSettings._getLocal("Int", modName, keyPath, attrName, defaultValue)
-        --modsSettings:_load()
-        --local xPath = modsSettings._makeXPath(modName, keyPath, attrName)
-        --local value = getXMLInt(modsSettings._xmlFile, xPath)
-        --if value ~= nil then
-        --    return value
-        --end
-        --setXMLInt(modsSettings._xmlFile, xPath, defaultValue)
-        --modsSettings._xmlFileDirty = true
-        --return defaultValue
     end
     ,getFloatLocal = function(modName, keyPath, attrName, defaultValue)
         return modsSettings._getLocal("Float", modName, keyPath, attrName, defaultValue)
-        --modsSettings:_load()
-        --local xPath = modsSettings._makeXPath(modName, keyPath, attrName)
-        --local value = getXMLFloat(modsSettings._xmlFile, xPath)
-        --if value ~= nil then
-        --    return value
-        --end
-        --setXMLFloat(modsSettings._xmlFile, xPath, defaultValue)
-        --modsSettings._xmlFileDirty = true
-        --return defaultValue
     end
     ,getBoolLocal = function(modName, keyPath, attrName, defaultValue)
         return modsSettings._getLocal("Bool", modName, keyPath, attrName, defaultValue)
-        --modsSettings:_load()
-        --local xPath = modsSettings._makeXPath(modName, keyPath, attrName)
-        --local value = getXMLBool(modsSettings._xmlFile, xPath)
-        --if value ~= nil then
-        --    return value
-        --end
-        --setXMLBool(modsSettings._xmlFile, xPath, defaultValue)
-        --modsSettings._xmlFileDirty = true
-        --return defaultValue
     end
 --[[ - TODO
--- Public methods, server's properties (stored in .../My Games/FarmingSimulator2015/savegame#/careerSavegame.XML)
+-- Public methods, server's properties (stored in .../savegame#/careerSavegame.XML)
     ,getStringServer = function(modName, keyPath, attrName, defaultValue)
-        --modsSettings:_load()
-        --local xPath = modsSettings._makeXPath(modName, keyPath, attrName)
-        --local value = getXMLInt(modsSettings._xmlFile, xPath)
-        --if value ~= nil then
-        --    return value
-        --end
-        --setXMLInt(modsSettings._xmlFile, xPath, defaultValue)
-        --modsSettings._xmlFileDirty = true
+        --return modsSettings._getServer("Bool", modName, keyPath, attrName, defaultValue)
         return defaultValue
     end
 --]]
