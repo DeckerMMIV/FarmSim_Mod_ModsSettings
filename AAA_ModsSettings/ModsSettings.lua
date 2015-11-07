@@ -9,7 +9,7 @@
 
 ## How to use this
 
-When your own script has a need to get a player-local property, it can check 
+When your own script has a need to get a player-local property, it can check
 first to see if the ModsSettings module is available, and use its methods to
 get the property values.
 
@@ -18,22 +18,22 @@ Example code:
   function myMod:load()
     -- Set up your mod's default builtin values.
     myMod.playerHatId = 42
-  
+
     -- Check if the 'ModsSettings' mods is available, before attempting to use it.
     if ModsSettings ~= nil then
       -- Get the player-local custom values, by querying the ModsSettings module.
       --
       -- If there isn't yet any custom values, then these will be added to the "modsSetttings.XML" file,
       -- using the default-value that was given as the last argument in the get<type>Local() method-call.
-      
+
       local modName = "myMod"           -- Unique identification of 'your mod'. This will create a corresponding section in the "modsSettings.XML" file.
       local keyName = "playerConfig"    -- Key to further distinguish different properties, if your mod has a need for such.
-      
+
       myMod.playerHatId = ModsSettings.getIntLocal(modName, keyName, "hatId", myMod.playerHatId)
                                                --  ^        ^         ^       ^- Default-value to use, if attribute not found in "modsSettings.XML"
                                                --  |        |         \--------- Attribute-name
                                                --  |        \------------------- Key-name
-                                               --  \---------------------------- Unique identifier, to distinguish different mods' settings in "modsSettings.XML" file 
+                                               --  \---------------------------- Unique identifier, to distinguish different mods' settings in "modsSettings.XML" file
     else
       -- The ModsSettings module not found, so need to just use the builtin values.
     end
@@ -89,12 +89,47 @@ modsSettings = {
 -- Constants
      modDir = g_currentModDirectory
     ,version = (modItem and modItem.version) and modItem.version or "?.?.?"
+-- Version checking methods
+    ,isVersion = function(minimumRequestedVersion, requestedByModName)
+        local requestedVersion = Utils.splitString(".", tostring(minimumRequestedVersion))
+        local actualVersion    = Utils.splitString(".", modsSettings.version)
+        local isOk = false
+        for i=1,#requestedVersion do
+            if i > #actualVersion then
+                break
+            end
+            local requested = tonumber(requestedVersion[i])
+            local actual    = tonumber(actualVersion[i])
+            print(tostring(i).." / requested:"..tostring(requested)..",actual:"..tostring(actual))
+            if requested == nil or actual == nil then
+                break
+            end
+            if requested < actual then
+                isOk = true
+                break
+            elseif requested > actual then
+                isOk = false
+                break
+            end
+            if i == #requestedVersion and requested == actual then
+                isOk = true
+            end
+        end
+        if not isOk then
+            logInfo("WARNING! Another mod named '",requestedByModName,"', requested minimum version '",minimumRequestedVersion,"' of ModsSettings (you have version '",modsSettings.version,"'). - You should probably update the 'ModsSettings' mod.")
+        end
+        return isOk
+    end
 -- Private methods/fields
     ,_rootTag = "modsSettings"
     ,_filenameLocal = getUserProfileAppPath() .. "modsSettings.xml"  -- Should resolve to "{...}/My Games/FarmingSimulator2015/modsSettings.xml"
     ,_xmlFile = nil
     ,_xmlFileDirty = false
     ,_update = function(self,dt)
+        --if modsSettings._localValuesPendingSave ~= nil then
+        --    pcall(modsSettings._flushPendingLocal(modsSettings), '')
+        --end
+
         if modsSettings._xmlFile ~= nil then
             if modsSettings._xmlFileDirty then
                 modsSettings._xmlFileDirty = false
@@ -122,27 +157,43 @@ modsSettings = {
     end
 -- Private methods - Local
     ,_loadLocal = function(self)
+        -- Only for clients, so dedicated-server is prohibited from doing this.
+        if g_dedicatedServerInfo ~= nil then
+            return
+        end
+
         if self._xmlFile == nil then
             if fileExists(self._filenameLocal) then
                 logInfo("Loading file ", self._filenameLocal)
                 self._xmlFile = loadXMLFile(self._rootTag, self._filenameLocal)
             end
             if self._xmlFile == nil then
-                if g_dedicatedServerInfo == nil then -- Only for non-dedicated-server
-                    logInfo("Creating new/empty file ", self._filenameLocal)
-                    self._xmlFile = createXMLFile(self._rootTag, self._filenameLocal, self._rootTag)
-                    self._xmlFileDirty = true
-                end
+                logInfo("Creating new/empty file ", self._filenameLocal)
+                self._xmlFile = createXMLFile(self._rootTag, self._filenameLocal, self._rootTag)
+                self._xmlFileDirty = true
             end
         end
     end
     ,_saveLocal = function(self)
-        if self._xmlFile ~= nil then
-            if g_dedicatedServerInfo == nil then -- Only for non-dedicated-server
-                logInfo("Attempting to save file ", self._filenameLocal)
-                saveXMLFile(self._xmlFile)
-            end
+        -- Only for clients, so dedicated-server is prohibited from doing this.
+        if g_dedicatedServerInfo ~= nil then
+            return
         end
+
+        if self._xmlFile ~= nil then
+            logInfo("Attempting to save file ", self._filenameLocal)
+            saveXMLFile(self._xmlFile)
+            ----
+            --modsSettings._localValuesPendingSave = {}
+        end
+    end
+    ,_hasLocal = function(modName, keyName)
+        modsSettings:_loadLocal()
+        if modsSettings._xmlFile ~= nil then
+            local xPath = tostring(modsSettings._rootTag) .. "." .. tostring(modName) ..".".. tostring(keyName)
+            return hasXMLProperty(modsSettings._xmlFile, xPath)
+        end
+        return false
     end
     ,_getLocal = function(fieldType, modName, keyName, attrName, defaultValue)
         modsSettings:_loadLocal()
@@ -152,18 +203,70 @@ modsSettings = {
             if value ~= nil then
                 return value
             end
-            _G["setXML"..fieldType](modsSettings._xmlFile, xPath, defaultValue)
-            modsSettings._xmlFileDirty = true
+            --_G["setXML"..fieldType](modsSettings._xmlFile, xPath, defaultValue)
+            --modsSettings._xmlFileDirty = true
+            modsSettings._setLocal(fieldType, modName, keyName, attrName, defaultValue)
         end
         return defaultValue
     end
-    --,_localKeysPendingSave = {}
-    --,_setLocal = function(fieldType, modName, keyName, attrName, value)
-    --    if g_dedicatedServerInfo == nil then -- Only for non-dedicated-server
-    --        local xPath = modsSettings._makeXPath(modName, keyName, attrName)
-    --        modsSettings._localKeysPendingSave[xPath] = { v=value, t=fieldType }
+    --,_localValuesPendingSave = {}
+    --,_flushPendingLocal = function(self)
+    --    modsSettings:_loadLocal()
+    --    if modsSettings._xmlFile ~= nil then
+    --        log("modsSettings._flushPendingLocal");
+    --
+    --        for modName,mods in pairs(modsSettings._localValuesPendingSave) do
+    --            for keyName,keys in pairs(mods) do
+    --                for attrName,attrValue in pairs(keys) do
+    --                    if attrValue ~= nil then
+    --                        local xPath = tostring(modsSettings._rootTag) .. "." .. modsSettings._makeXPath(modName, keyName, attrName)
+    --                        setXMLString(modsSettings._xmlFile, xPath, tostring(attrValue))
+    --                        modsSettings._xmlFileDirty = true
+    --                    end
+    --                end
+    --            end
+    --        end
     --    end
     --end
+    --,_setLocal = function(fieldType, modName, keyName, attrName, value)
+    --    -- Only for clients, so dedicated-server is prohibited from doing this.
+    --    if g_dedicatedServerInfo ~= nil then
+    --        return
+    --    end
+    --
+    --    modName  = tostring(Utils.getNoNil(modName,  "unspecifiedModName" ))
+    --    keyName  = tostring(Utils.getNoNil(keyName,  "unspecifiedKeyName" ))
+    --    attrName = tostring(Utils.getNoNil(attrName, "unspecifiedAttrName"))
+    --
+    --    modsSettings._localValuesPendingSave[modName] = Utils.getNoNil(modsSettings._localValuesPendingSave[modName], {})
+    --    local mod = modsSettings._localValuesPendingSave[modName]
+    --
+    --    mod[keyName] = Utils.getNoNil(mod[keyName], {})
+    --    local key = mod[keyName]
+    --
+    --    local oldValue = key[attrName]
+    --    key[attrName] = (value ~= nil) and tostring(value) or nil
+    --
+    --    log("modsSettings._setLocal: ",modsSettings._makeXPath(modName, keyName, attrName),"='",value,"' (old-value='",oldValue,"')")
+    --end
+    ,_setLocal = function(fieldType, modName, keyName, attrName, value)
+        --log("_setLocal(",fieldType,", ",modName,", ",keyName,", ",attrName,", ",value,")")
+        modsSettings:_loadLocal()
+        if modsSettings._xmlFile ~= nil then
+            local xPath = tostring(modsSettings._rootTag) .. "." .. modsSettings._makeXPath(modName, keyName, attrName)
+            log(xPath)
+            if value ~= nil then
+                _G["setXML"..fieldType](modsSettings._xmlFile, xPath, value)
+            else
+                removeXMLProperty(modsSettings._xmlFile, xPath)
+            end
+            modsSettings._xmlFileDirty = true
+            --log("true")
+            return true
+        end
+        --log("false")
+        return false
+    end
 -- Private methods - Server
     ,_serverValues = {}
     ,_getServer = function(fieldType, modName, keyName, attrName, defaultValue)
@@ -176,7 +279,7 @@ modsSettings = {
             elseif fieldType == "Float" then
                 return tonumber(modsSettings._serverValues[xPath])
             elseif fieldType == "Bool" then
-                return tostring(modsSettings._serverValues[xPath]):lower() == "true" 
+                return tostring(modsSettings._serverValues[xPath]):lower() == "true"
             end
             logInfo("_getServer() Invalid field-type: ",fieldType)
             return defaultValue
@@ -192,25 +295,25 @@ modsSettings = {
         if not g_currentMission:getIsServer() then
             return;
         end
-        
+
         modName  = tostring(Utils.getNoNil(modName,  "unspecifiedModName" ))
         keyName  = tostring(Utils.getNoNil(keyName,  "unspecifiedKeyName" ))
         attrName = tostring(Utils.getNoNil(attrName, "unspecifiedAttrName"))
-        
+
         modsSettings._serverValuesPendingSave[modName] = Utils.getNoNil(modsSettings._serverValuesPendingSave[modName], {})
         local mod = modsSettings._serverValuesPendingSave[modName]
-        
+
         mod[keyName] = Utils.getNoNil(mod[keyName], {})
         local key = mod[keyName]
-        
+
         local oldValue = key[attrName]
         key[attrName] = (value ~= nil) and tostring(value) or nil
-        
+
         log("modsSettings._setServer: ",modsSettings._makeXPath(modName, keyName, attrName),"='",value,"' (old-value='",oldValue,"')")
     end
     ,_loadServer = function(xmlFile, xmlRootKey)
         log("modsSettings._loadServer:",xmlFile,"/",xmlRootKey);
-        
+
         local rootTag = xmlRootKey ..".".. tostring(modsSettings._rootTag);
         local m=0
         while (true) do
@@ -220,7 +323,7 @@ modsSettings = {
             if modName == nil then
                 break
             end
-            
+
             local k=0
             while (true) do
                 local keyTag = string.format(modTag..".key(%d)", k)
@@ -229,7 +332,7 @@ modsSettings = {
                 if keyName == nil then
                     break
                 end
-                
+
                 local a=0
                 while (true) do
                     local attrTag = string.format(keyTag..".attr(%d)", a)
@@ -253,36 +356,36 @@ modsSettings = {
     end
     ,_saveServer = function(xmlFile, xmlRootKey)
         log("modsSettings._saveServer:",xmlFile,"/",xmlRootKey);
-        
+
         local rootTag = xmlRootKey ..".".. tostring(modsSettings._rootTag);
         local m=0
         for modName,mods in pairs(modsSettings._serverValuesPendingSave) do
             local modTag = string.format(rootTag..".mod(%d)", m)
             m=m+1
-            
+
             local k=0
             for keyName,keys in pairs(mods) do
                 local keyTag = string.format(modTag..".key(%d)", k)
                 k=k+1
-                
+
                 local a=0
                 for attrName,attrValue in pairs(keys) do
                     if attrValue ~= nil then
                         local attrTag = string.format(keyTag..".attr(%d)", a)
                         a=a+1
-                        
+
                         setXMLString(xmlFile, attrTag.."#name", attrName)
                         setXMLString(xmlFile, attrTag.."#value", attrValue)
 
                         log("modsSettings._saveServer: ",modsSettings._makeXPath(modName, keyName, attrName),"='",attrValue,"'")
                     end
                 end
-                
+
                 if a>0 then
                     setXMLString(xmlFile, keyTag.."#name", keyName)
                 end
             end
-            
+
             if k>0 then
                 setXMLString(xmlFile, modTag.."#name", modName)
             end
@@ -291,6 +394,10 @@ modsSettings = {
 --
 -- Public methods, player-local properties (stored in .../My Games/FarmingSimulator2015/modsSettings.XML)
 --
+    ,hasKeyLocal = function(modName, keyName)
+        return modsSettings._hasLocal(modName, keyName)
+    end
+    --
     ,getStringLocal = function(modName, keyName, attrName, defaultValue)
         return modsSettings._getLocal("String", modName, keyName, attrName, defaultValue)
     end
@@ -303,9 +410,26 @@ modsSettings = {
     ,getBoolLocal = function(modName, keyName, attrName, defaultValue)
         return modsSettings._getLocal("Bool", modName, keyName, attrName, defaultValue)
     end
+    --
+    ,setStringLocal = function(modName, keyName, attrName, newValue)
+        return modsSettings._setLocal("String", modName, keyName, attrName, newValue)
+    end
+    ,setIntLocal = function(modName, keyName, attrName, newValue)
+        return modsSettings._setLocal("Int", modName, keyName, attrName, newValue)
+    end
+    ,setFloatLocal = function(modName, keyName, attrName, newValue)
+        return modsSettings._setLocal("Float", modName, keyName, attrName, newValue)
+    end
+    ,setBoolLocal = function(modName, keyName, attrName, newValue)
+        return modsSettings._setLocal("Bool", modName, keyName, attrName, newValue)
+    end
 --
 -- Public methods, server's properties (stored in .../savegame#/careerSavegame.XML)
 --
+    --,hasKeyServer = function(modName, keyName)
+    --    return modsSettings._hasServer(modName, keyName)
+    --end
+    --
     ,getStringServer = function(modName, keyName, attrName, defaultValue)
         return modsSettings._getServer("String", modName, keyName, attrName, defaultValue)
     end
@@ -319,17 +443,17 @@ modsSettings = {
         return modsSettings._getServer("Bool", modName, keyName, attrName, defaultValue)
     end
     --
-    ,setStringServer = function(modName, keyName, attrName, value)
-        return modsSettings._setServer("String", modName, keyName, attrName, value)
+    ,setStringServer = function(modName, keyName, attrName, newValue)
+        return modsSettings._setServer("String", modName, keyName, attrName, newValue)
     end
-    ,setIntServer = function(modName, keyName, attrName, value)
-        return modsSettings._setServer("Int", modName, keyName, attrName, value)
+    ,setIntServer = function(modName, keyName, attrName, newValue)
+        return modsSettings._setServer("Int", modName, keyName, attrName, newValue)
     end
-    ,setFloatServer = function(modName, keyName, attrName, value)
-        return modsSettings._setServer("Float", modName, keyName, attrName, value)
+    ,setFloatServer = function(modName, keyName, attrName, newValue)
+        return modsSettings._setServer("Float", modName, keyName, attrName, newValue)
     end
-    ,setBoolServer = function(modName, keyName, attrName, value)
-        return modsSettings._setServer("Bool", modName, keyName, attrName, value)
+    ,setBoolServer = function(modName, keyName, attrName, newValue)
+        return modsSettings._setServer("Bool", modName, keyName, attrName, newValue)
     end
 }
 

@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="no" ?>
-<modDesc descVersion="22">
-    <author>Freelance Modding Crew</author>
+<modDesc descVersion="24">
+    <author>Decker_MMIV</author>
 
-    <version>0.0.4-BETA</version>
+    <version>0.1.1</version>
 
     <title>
         <en>Mods Settings - (a 'mod for mods')</en>
@@ -17,7 +17,7 @@
     
     <description>
         <en>
-<![CDATA[Allows other mods to use a single shared settings-file for their properties.
+<![CDATA[Allows other mods to use a single shared settings-file 'modsSettings.XML' for their properties.
 
 Decker_MMIV - fs-uk.com, forum.farming-simulator.com, modhoster.com]]>
         </en>
