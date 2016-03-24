@@ -77,7 +77,7 @@ in CareerSavegame.XML:
 
 -- For debugging
 function log(...)
-    if true then
+    if false then
         local txt = ""
         for idx = 1,select("#", ...) do
             txt = txt .. tostring(select(idx, ...))
@@ -103,7 +103,7 @@ modsSettings = {
 -- Version checking methods
     ,isVersion = function(minimumRequestedVersion, requestedByModName)
         local requestedVersion = Utils.splitString(".", tostring(minimumRequestedVersion))
-        local actualVersion    = Utils.splitString(".", modsSettings.version)
+        local actualVersion    = Utils.splitString(".", Utils.splitString("-", modsSettings.version)[1])
         local isOk = false
         for i=1,#requestedVersion do
             if i > #actualVersion then
