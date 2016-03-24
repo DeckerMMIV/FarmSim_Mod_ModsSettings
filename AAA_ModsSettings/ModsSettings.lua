@@ -111,7 +111,7 @@ modsSettings = {
             end
             local requested = tonumber(requestedVersion[i])
             local actual    = tonumber(actualVersion[i])
-            print(tostring(i).." / requested:"..tostring(requested)..",actual:"..tostring(actual))
+            --print(tostring(i).." / requested:"..tostring(requested)..",actual:"..tostring(actual))
             if requested == nil or actual == nil then
                 break
             end

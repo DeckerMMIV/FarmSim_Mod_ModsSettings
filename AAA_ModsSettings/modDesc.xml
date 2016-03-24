@@ -1,8 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="no" ?>
-<modDesc descVersion="24">
+<modDesc descVersion="25">
     <author>Decker_MMIV</author>
 
-    <version>0.1.2</version>
+    <version>0.1.3-BETA</version>
 
     <title>
         <en>Mods Settings - (a 'mod for mods')</en>
@@ -26,8 +26,6 @@ Decker_MMIV - fs-uk.com, forum.farming-simulator.com, modhoster.com]]>
     <iconFilename>store_ModsSettings.dds</iconFilename>
 
     <multiplayer supported="true"/>
-
-    <!--l10n filenamePrefix="modDesc_l10n" /--> <!-- Load the corresponding modDesc_l10n_<language>.XML file, or revert to 'en'/'de'. -->
 
     <extraSourceFiles>
         <sourceFile filename="ModsSettings.lua" />
