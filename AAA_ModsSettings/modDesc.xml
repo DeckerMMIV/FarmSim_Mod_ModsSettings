@@ -2,7 +2,9 @@
 <modDesc descVersion="25">
     <author>Decker_MMIV</author>
 
-    <version>0.1.4-BETA</version>
+    <contributors></contributors>
+    
+    <version>0.1.5-BETA</version>
 
     <title>
         <en>Mods Settings - (a 'mod for mods')</en>
@@ -19,7 +21,7 @@
         <en>
 <![CDATA[Allows other mods to use a single shared settings-file 'modsSettings.XML' for their properties.
 
-Decker_MMIV - fs-uk.com, forum.farming-simulator.com, modhoster.com]]>
+Decker_MMIV - fs-uk.com, modcentral.co.uk, forum.farming-simulator.com, modhoster.com]]>
         </en>
     </description>
 
