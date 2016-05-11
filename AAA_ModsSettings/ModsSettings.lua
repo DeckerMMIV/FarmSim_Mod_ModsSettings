@@ -1,8 +1,8 @@
 --
 --  ModsSettings - a "mod for mods" which can store/retrieve player-local settings from a "modsSettings.XML" file.
 --
--- @author  Decker_MMIV - fs-uk.com, forum.farming-simulator.com, modhoster.com
--- @date    2015-04-xx
+-- @author  Decker_MMIV - fs-uk.com, modcentral.co.uk, forum.farming-simulator.com, modhoster.com
+-- @date    2015-05-xx
 --
 
 --[[
@@ -76,8 +76,9 @@ in CareerSavegame.XML:
 --]]
 
 -- For debugging
+local debugLog = false
 function log(...)
-    if false then
+    if debugLog then
         local txt = ""
         for idx = 1,select("#", ...) do
             txt = txt .. tostring(select(idx, ...))
@@ -132,8 +133,10 @@ modsSettings = {
         return isOk
     end
 -- Private methods/fields
-    ,_rootTag = "modsSettings"
-    ,_filenameLocal = getUserProfileAppPath() .. "modsSettings.xml"  -- Should resolve to "{...}/My Games/FarmingSimulator2015/modsSettings.xml"
+    ,_rootTag          = "modsSettings"
+    ,_filenameLocalOld = getUserProfileAppPath() .. "modsSettings.xml"  -- Should resolve to "{...}/My Games/FarmingSimulator2015/modsSettings.xml"
+    ,_folderLocalNew   = getUserProfileAppPath() .. "modsSettings"
+    ,_filenameLocalNew = getUserProfileAppPath() .. "modsSettings/AAA_ModsSettings.xml"
     ,_xmlFile = nil
     ,_xmlFileDirty = false
     ,_update = function(self,dt)
@@ -160,13 +163,30 @@ modsSettings = {
         end
 
         if self._xmlFile == nil then
-            if fileExists(self._filenameLocal) then
-                logInfo("Loading file ", self._filenameLocal)
-                self._xmlFile = loadXMLFile(self._rootTag, self._filenameLocal)
+            local rc,msg
+            if fileExists(self._filenameLocalNew) then
+                logInfo("Loading file ", self._filenameLocalNew)
+                self._xmlFile = loadXMLFile(self._rootTag, self._filenameLocalNew)
+            elseif fileExists(self._filenameLocalOld) then
+                logInfo("Copying from old location ", self._filenameLocalOld)
+                
+                rc,msg = createFolder(self._folderLocalNew)
+                log(rc," : createFolder(",self._folderLocalNew,") - ",msg)
+                
+                rc,msg = copyFile(self._filenameLocalOld, self._filenameLocalNew, true)
+                log(rc," : copyFile(",self._filenameLocalOld,",",self._filenameLocalNew,") - ",msg)
+
+                logInfo("Loading file ", self._filenameLocalNew)
+                self._xmlFile = loadXMLFile(self._rootTag, self._filenameLocalNew)
             end
+            
             if self._xmlFile == nil then
-                logInfo("Creating new/empty file ", self._filenameLocal)
-                self._xmlFile = createXMLFile(self._rootTag, self._filenameLocal, self._rootTag)
+                logInfo("Creating new/empty file ", self._filenameLocalNew)
+                
+                rc,msg = createFolder(self._folderLocalNew)
+                log(rc," : createFolder(",self._folderLocalNew,") - ",msg)
+                
+                self._xmlFile = createXMLFile(self._rootTag, self._filenameLocalNew, self._rootTag)
                 self._xmlFileDirty = true
             end
         end
@@ -178,7 +198,7 @@ modsSettings = {
         end
 
         if self._xmlFile ~= nil then
-            logInfo("Attempting to save file ", self._filenameLocal)
+            logInfo("Attempting to save file ", self._filenameLocalNew)
             saveXMLFile(self._xmlFile)
         end
     end
